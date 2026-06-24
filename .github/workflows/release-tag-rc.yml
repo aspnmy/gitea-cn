@@ -48,27 +48,6 @@ jobs:
           for f in dist/release/*; do
             echo "$GPG_PASSPHRASE" | gpg --pinentry-mode loopback --passphrase-fd 0 --batch --yes --detach-sign -u "$GPG_FINGERPRINT" --output "$f.asc" "$f"
           done
-      # clean branch name to get the folder name in S3
-      - name: Get cleaned branch name
-        id: clean_name
-        env:
-          REF: ${{ github.ref }}
-        run: |
-          REF_NAME=$(echo "$REF" | sed -e 's/refs\/heads\///' -e 's/refs\/tags\/v//' -e 's/release\/v//')
-          echo "Cleaned name is ${REF_NAME}"
-          echo "branch=${REF_NAME}" >> "$GITHUB_OUTPUT"
-      - name: configure aws
-        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
-        with:
-          aws-region: ${{ secrets.AWS_REGION }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      - name: upload binaries to s3
-        env:
-          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-          BRANCH: ${{ steps.clean_name.outputs.branch }}
-        run: |
-          aws s3 sync dist/release "s3://$AWS_S3_BUCKET/gitea/$BRANCH" --no-progress
       - name: Install GH CLI
         uses: dev-hanz-ops/install-gh-cli-action@af38ce09b1ec248aeb08eea2b16bbecea9e059f8 # v0.2.1
         with:
@@ -96,8 +75,7 @@ jobs:
         id: meta
         with:
           images: |-
-            gitea/gitea
-            ghcr.io/go-gitea/gitea
+            ghcr.io/aspnmy/gitea-cn
           flavor: |
             latest=false
           # 1.2.3-rc0
@@ -109,8 +87,7 @@ jobs:
         id: meta_rootless
         with:
           images: |-
-            gitea/gitea
-            ghcr.io/go-gitea/gitea
+            ghcr.io/aspnmy/gitea-cn
           # each tag below will have the suffix of -rootless
           flavor: |
             latest=false
@@ -120,17 +97,12 @@ jobs:
             type=semver,pattern={{version}}
           annotations: |
             org.opencontainers.image.authors="maintainers@gitea.io"
-      - name: Login to Docker Hub
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Login to GHCR using PAT
+      - name: Login to GHCR
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_TOKEN }}
       - name: build regular container image
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
