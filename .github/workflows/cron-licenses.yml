@@ -8,7 +8,7 @@ on:
 jobs:
   cron-licenses:
     runs-on: ubuntu-latest
-    if: github.repository == 'go-gitea/gitea'
+    if: github.repository == 'aspnmy/gitea-cn'
     permissions:
       contents: write
     steps:
@@ -27,5 +27,5 @@ jobs:
           branch: main
           commit: true
           commit_message: "[skip ci] Updated licenses and gitignores"
-          remote: "git@github.com:go-gitea/gitea.git"
+          remote: "git@github.com:aspnmy/gitea-cn.git"
           ssh_key: ${{ secrets.DEPLOY_KEY }}
